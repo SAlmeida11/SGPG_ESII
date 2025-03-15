@@ -10,10 +10,3 @@ class VendaCombustivel:
             self.__tipoCombustivel = novoTipoCombustivel
         else:
             raise ValueError("Tipo de combustível incorreto.")
-        
-if __name__ == "__main__":
-    try:
-        comb = VendaCombustivel("123")
-        print(comb.getTipoCombustivel())
-    except ValueError as e:
-        print(f"Erro: {e}")

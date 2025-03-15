@@ -29,13 +29,3 @@ class Vinculo():
             self.__status = novoStatus
         else:
             raise ValueError("Status incorreto.")
-        
-if __name__ == "__main__":
-    try:
-        data = date(2010, 10, 10)
-        vinc = Vinculo(data, 500.50, True)
-        print(vinc.getSalario())
-        print(vinc.getDataContratacao())
-        print(vinc.getStatus())
-    except ValueError as e:
-        print(f"Erro: {e}")
