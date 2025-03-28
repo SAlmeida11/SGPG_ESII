@@ -154,6 +154,38 @@ def adicionar_cliente():
         cursor.close()
         conexao.close()
 
+# Rota para listar fornecedores
+@app.route('/fornecedores', methods=['GET'])
+def listar_fornecedores():
+    conexao = criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        query = "SELECT cnpj, NomeFor, Encarregado, Status, `produtosFornecidos[]`, funcionario_cpf FROM fornecedor"
+        cursor.execute(query)
+        fornecedores = cursor.fetchall()
+
+        # Convertendo os dados para um formato JSON adequado
+        lista_fornecedores = [
+            {
+                "cnpj": fornecedor[0],
+                "NomeFor": fornecedor[1],
+                "Encarregado": fornecedor[2],
+                "Status": fornecedor[3],
+                "`produtosFornecidos[]`": fornecedor[4],
+                "funcionario_cpf": fornecedor[5]
+            }
+            for fornecedor in fornecedores
+        ]
+
+        return jsonify(lista_fornecedores), 200
+    except Error as err:
+        print(f"Erro ao listar fornecedores: {err}")
+        return jsonify({"erro": "Erro ao listar fornecedores"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
 if __name__ == '__main__':
     app.run(debug=True)
 
