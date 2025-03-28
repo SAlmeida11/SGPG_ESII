@@ -14,7 +14,7 @@ def criar_conexao():
     return mysql.connector.connect(
         host="127.0.0.1",
         user="root",
-        password="sua_senha",
+        password="141203",
         database="mydb"
     )
 
@@ -83,6 +83,73 @@ def adicionar_funcionario():
         conexao.rollback()
         print(f"Erro ao adicionar funcionário: {err}")
         return jsonify({"erro": "Erro ao cadastrar funcionário"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+# Rota para listar clientes
+@app.route('/clientes', methods=['GET'])
+def listar_clientes():
+    conexao = criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        query = "SELECT cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco FROM cliente"
+        cursor.execute(query)
+        clientes = cursor.fetchall()
+
+        # Convertendo os dados para um formato JSON adequado
+        lista_clientes = [
+            {
+                "cpf": cliente[0],
+                "nomeCliente": cliente[1],
+                "tipo": cliente[2],
+                "dataCadastro": cliente[3],
+                "endereco_id_endereco": cliente[4]
+            }
+            for cliente in clientes
+        ]
+
+        return jsonify(lista_clientes), 200
+    except Error as err:
+        print(f"Erro ao listar clientes: {err}")
+        return jsonify({"erro": "Erro ao listar clientes"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+# Rota para adicionar um cliente
+@app.route('/clientes', methods=['POST'])
+def adicionar_cliente():
+    conexao = criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Obtendo os dados do corpo da requisição
+        dados = request.json
+        cpf = dados.get("cpf")
+        nomeCliente = dados.get("nomeCliente")
+        tipo = dados.get("tipo")
+        dataCadastro = dados.get("dataCadastro")
+        endereco_id_endereco = dados.get("endereco_id_endereco")
+
+        # Validação dos dados recebidos
+        if not cpf or not nomeCliente or not tipo or not dataCadastro or not endereco_id_endereco:
+            return jsonify({"erro": "Dados incompletos"}), 400
+
+        query = """
+            INSERT INTO cliente 
+            (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Cliente cadastrado com sucesso!", "id": cursor.lastrowid}), 201
+    except Error as err:
+        conexao.rollback()
+        print(f"Erro ao adicionar cliente: {err}")
+        return jsonify({"erro": "Erro ao cadastrar cliente"}), 500
     finally:
         cursor.close()
         conexao.close()
