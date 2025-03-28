@@ -1,35 +1,52 @@
 import mysql.connector
+from mysql.connector import Error
 
 class FuncionarioModel:
     def __init__(self):
-        self.conexao = mysql.connector.connect(
-            host="127.0.0.1",
-            user="root",
-            password="sua_senha",
-            database="db_sgpg"
-        )
-        self.cursor = self.conexao.cursor()
+        try:
+            self.conexao = mysql.connector.connect(
+                host="127.0.0.1",
+                user="root",
+                password="sua_senha",
+                database="mydb",  # Use o nome correto do banco
+                autocommit=False  # Melhor para controle transacional
+            )
+            self.cursor = self.conexao.cursor(dictionary=True)
+        except Error as err:
+            print(f"Erro de conexão: {err}")
+            raise
 
     def listar_funcionarios(self):
-        query = "SELECT nome, telefone, cpf, status FROM Funcionario"
-        self.cursor.execute(query)
-        return self.cursor.fetchall()
+        try:
+            query = """
+                SELECT nomeFun, cpf, admin, dtNascimento, 
+                       vinculo_id_vinculo, endereco_id_endereco 
+                FROM funcionario
+            """
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except Error as err:
+            print(f"Erro ao listar: {err}")
+            return []
 
-    def adicionar_funcionario(self, nome, telefone, cpf, status):
-        query = "INSERT INTO Funcionario (nome, telefone, cpf, status) VALUES (%s, %s, %s, %s)"
-        self.cursor.execute(query, (nome, telefone, cpf, status))
-        self.conexao.commit()
+    def adicionar_funcionario(self, nome, cpf, dtNascimento, admin, vinculo_id, endereco_id):
+        try:
+            query = """
+                INSERT INTO funcionario 
+                (nomeFun, cpf, dtNascimento, admin, vinculo_id_vinculo, endereco_id_endereco) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            self.cursor.execute(query, (nome, cpf, dtNascimento, admin, vinculo_id, endereco_id))
+            self.conexao.commit()
+            return self.cursor.lastrowid
+        except Error as err:
+            self.conexao.rollback()
+            print(f"Erro ao adicionar: {err}")
+            raise
 
-    def atualizar_funcionario(self, id_funcionario, nome, telefone, cpf, status):
-        query = "UPDATE Funcionario SET nome=%s, telefone=%s, cpf=%s, status=%s WHERE id=%s"
-        self.cursor.execute(query, (nome, telefone, cpf, status, id_funcionario))
-        self.conexao.commit()
+    # Implementar os outros métodos com o mesmo padrão...
 
-    def excluir_funcionario(self, id_funcionario):
-        query = "DELETE FROM Funcionario WHERE id=%s"
-        self.cursor.execute(query, (id_funcionario,))
-        self.conexao.commit()
-
-    def fechar_conexao(self):
-        self.cursor.close()
-        self.conexao.close()
+    def __del__(self):
+        if hasattr(self, 'conexao') and self.conexao.is_connected():
+            self.cursor.close()
+            self.conexao.close()
