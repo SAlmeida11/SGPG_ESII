@@ -5,9 +5,16 @@ from mysql.connector import Error
 from conexao import Conexao
 
 app = Flask(__name__)
-CORS(app) #Permite solicitações
-#CORS(app, origins=["htpp://localhost:3000"]) 
+#CORS(app) #Permite solicitações
+CORS(app, origins=["htpp://localhost:3000"]) 
 #Permite solicitações apenas da origin específica
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"  # Altere conforme necessário
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
 
 # Rota para listar funcionários
 @app.route('/funcionarios', methods=['GET'])
@@ -42,31 +49,59 @@ def listar_funcionarios():
         conexao.close()
 
 # Rota para adicionar um funcionário
-@app.route('/funcionarios', methods=['POST'])
+@app.route('/cadfuncionarios', methods=['POST'])
 def adicionar_funcionario():
-    conexao = conexao.criar_conexao()
+    conexao = Conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
         # Obtendo os dados do corpo da requisição
         dados = request.json
-        nome = dados.get("nome")
+
+        #Tabela Vinculo
+        id_endereco = 7 #dados.get("id_endereco")
+        logradouro = dados.get("logradouro")
+        numero = dados.get("numero")
+        bairro = "Brooklyn"#dados.get("bairro")
+        cidade = dados.get("cidade")
+        estado = dados.get("estado")
+        cep = dados.get("cep")
+
+        #Tabela Endereco
+        id_vinculo = 'V010'#dados.get("id_vinculo")
+        dtContratacao = dados.get("dtContratacao")
+        salario = dados.get("salario")
+        status = 1 #dados.get("status")
+
+        #Tabela Funcionario
+        nomeFun = dados.get("nome")
         cpf = dados.get("cpf")
         dtNascimento = dados.get("dataNascimento")
-        admin = int(dados.get("admin", 0))  # Considera 0 como padrão para admin
-        vinculo_id_vinculo = dados.get("vinculo_id_vinculo")
-        endereco_id_endereco = dados.get("endereco_id_endereco")
+        admin = 0#int(dados.get("admin", 0))  # Considera 0 como padrão para admin
 
         # Validação dos dados recebidos
-        if not nome or not cpf or not dtNascimento or not vinculo_id_vinculo or not endereco_id_endereco:
+        if not nomeFun or not cpf or not dtNascimento:
             return jsonify({"erro": "Dados incompletos"}), 400
 
         query = """
-            INSERT INTO funcionario 
-            (nomeFun, cpf, dtNascimento, admin, vinculo_id_vinculo, endereco_id_endereco) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            START TRANSACTION;
+
+            -- 1. Inserir um endereço
+            INSERT INTO endereco (id_endereco, logradouro, numero, bairro, cidade, estado, cep)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+
+            -- 2. Inserir um vínculo empregatício
+            INSERT INTO vinculo (id_vinculo, dtContratacao, salario, status)
+            VALUES (%s, %s, %s, %s);
+
+            -- 3. Inserir o funcionário
+            INSERT INTO funcionario (nomeFun, dtNascimento, cpf, admin, vinculo_id_vinculo, endereco_id_endereco)
+            VALUES (%s, %s, %s, %s);
+
+            -- Se tudo der certo, confirma a transação
+            COMMIT;
         """
-        cursor.execute(query, (nome, cpf, dtNascimento, admin, vinculo_id_vinculo, endereco_id_endereco))
+        cursor.execute(query, (id_endereco, logradouro, numero, bairro, cidade, estado, cep, id_vinculo, dtContratacao, salario, status, nomeFun, cpf, dtNascimento, admin))
         conexao.commit()
 
         return jsonify({"mensagem": "Funcionário cadastrado com sucesso!", "id": cursor.lastrowid}), 201
@@ -81,7 +116,7 @@ def adicionar_funcionario():
 # Rota para listar clientes
 @app.route('/clientes', methods=['GET'])
 def listar_clientes():
-    conexao = conexao.criar_conexao()
+    conexao = Conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
@@ -112,7 +147,7 @@ def listar_clientes():
 # Rota para adicionar um cliente
 @app.route('/clientes', methods=['POST'])
 def adicionar_cliente():
-    conexao = conexao.criar_conexao()
+    conexao = Conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
@@ -148,7 +183,7 @@ def adicionar_cliente():
 # Rota para listar fornecedores
 @app.route('/fornecedores', methods=['GET'])
 def listar_fornecedores():
-    conexao = conexao.criar_conexao()
+    conexao = Conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
