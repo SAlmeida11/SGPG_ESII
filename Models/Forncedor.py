@@ -1,43 +1,62 @@
-class Fornecedor:
-    def __init__(self, nome_for, cnpj, encarregado, status, produtos_fornecidos):
-        self._nome_for = nome_for
-        self._cnpj = cnpj
-        self._encarregado = encarregado
-        self._status = status
-        self._produtos_fornecidos = set(produtos_fornecidos)
-    
-    def get_nome_for(self):
-        return self._nome_for
-    
-    def set_nome_for(self, nome_for):
-        self._nome_for = nome_for
-    
-    def get_cnpj(self):
-        return self._cnpj
-    
-    def set_cnpj(self, cnpj):
-        self._cnpj = cnpj
-    
-    def get_encarregado(self):
-        return self._encarregado
-    
-    def set_encarregado(self, encarregado):
-        self._encarregado = encarregado
-    
-    def get_status(self):
-        return self._status
-    
-    def set_status(self, status):
-        self._status = status
-    
-    def get_produtos_fornecidos(self):
-        return self._produtos_fornecidos
-    
-    def set_produtos_fornecidos(self, produtos_fornecidos):
-        self._produtos_fornecidos = set(produtos_fornecidos)
-    
-    def add_produto(self, produto):
-        self._produtos_fornecidos.add(produto)
-    
-    def remove_produto(self, produto):
-        self._produtos_fornecidos.discard(produto)
+import mysql.connector
+
+class FornecedorModel:
+    def __init__(self):
+        self.conexao = mysql.connector.connect(
+            host="localhost",
+            user="seu_usuario",
+            password="sua_senha",
+            database="seu_banco"
+        )
+        self.cursor = self.conexao.cursor(dictionary=True)
+
+    def adicionar_fornecedor(self, fornecedor):
+        """Insere um novo fornecedor no banco de dados"""
+        try:
+            sql = """INSERT INTO fornecedores (nome, cnpj, endereco, telefone, email)
+                     VALUES (%s, %s, %s, %s, %s)"""
+            valores = (fornecedor.nome, fornecedor.cnpj, fornecedor.endereco, fornecedor.telefone, fornecedor.email)
+            self.cursor.execute(sql, valores)
+            self.conexao.commit()
+            return True
+        except Exception as e:
+            print(f"Erro ao adicionar fornecedor: {str(e)}")
+            return False
+
+    def atualizar_fornecedor(self, fornecedor):
+        """Atualiza os dados de um fornecedor existente"""
+        try:
+            sql = """UPDATE fornecedores SET nome=%s, endereco=%s, telefone=%s, email=%s
+                     WHERE cnpj=%s"""
+            valores = (fornecedor.nome, fornecedor.endereco, fornecedor.telefone, fornecedor.email, fornecedor.cnpj)
+            self.cursor.execute(sql, valores)
+            self.conexao.commit()
+            return True
+        except Exception as e:
+            print(f"Erro ao atualizar fornecedor: {str(e)}")
+            return False
+
+    def excluir_fornecedor(self, fornecedor):
+        """Remove um fornecedor do banco de dados"""
+        try:
+            sql = "DELETE FROM fornecedores WHERE cnpj = %s"
+            self.cursor.execute(sql, (fornecedor.cnpj,))
+            self.conexao.commit()
+            return True
+        except Exception as e:
+            print(f"Erro ao excluir fornecedor: {str(e)}")
+            return False
+
+    def listar_fornecedores(self):
+        """Retorna todos os fornecedores cadastrados"""
+        try:
+            self.cursor.execute("SELECT * FROM fornecedores")
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(f"Erro ao listar fornecedores: {str(e)}")
+            return []
+
+    def fechar_conexao(self):
+        """Fecha a conexão com o banco de dados"""
+        self.cursor.close()
+        self.conexao.close()
