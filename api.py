@@ -2,26 +2,17 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
+from conexao import Conexao
 
 app = Flask(__name__)
 CORS(app) #Permite solicitações
 #CORS(app, origins=["htpp://localhost:3000"]) 
 #Permite solicitações apenas da origin específica
 
-
-# Função para conectar ao banco de dados
-def criar_conexao():
-    return mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="141203",
-        database="mydb"
-    )
-
 # Rota para listar funcionários
 @app.route('/funcionarios', methods=['GET'])
 def listar_funcionarios():
-    conexao = criar_conexao()
+    conexao = Conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:

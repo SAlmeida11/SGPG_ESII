@@ -1,16 +1,11 @@
 import mysql.connector
 from mysql.connector import Error
+from conexao import Conexao
 
 class FuncionarioModel:
     def __init__(self):
         try:
-            self.conexao = mysql.connector.connect(
-                host="127.0.0.1",
-                user="root",
-                password="sua_senha",
-                database="mydb",  # Use o nome correto do banco
-                autocommit=False  # Melhor para controle transacional
-            )
+            self.conexao = Conexao.criar_conexao()
             self.cursor = self.conexao.cursor(dictionary=True)
         except Error as err:
             print(f"Erro de conexão: {err}")
