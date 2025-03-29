@@ -212,6 +212,31 @@ def listar_fornecedores():
         cursor.close()
         conexao.close()
 
+@app.route('/login', methods=['POST'])
+def login():
+    dados = request.json
+    cpf = dados.get("cpf")
+    senha = dados.get("senha")
+
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        query = "SELECT cpf FROM funcionario WHERE cpf = %s"
+        cursor.execute(query, (cpf,))
+        usuario = cursor.fetchone()
+
+        if usuario and usuario[0] == cpf and senha == cpf:
+            return jsonify({"mensagem": "Login bem-sucedido"}), 200
+        else:
+            return jsonify({"erro": "CPF ou senha incorretos"}), 401
+    except Error as err:
+        print(f"Erro ao realizar login: {err}")
+        return jsonify({"erro": "Erro interno no servidor"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
 if __name__ == '__main__':
     app.run(debug=True)
 
