@@ -9,7 +9,7 @@ class Conexao:
                 host="127.0.0.1",
                 user="root",
                 password="sua_senha",
-                database="mydb"
+                database="mydb2"
             )
             if conexao.is_connected():
                 return conexao
