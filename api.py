@@ -44,7 +44,7 @@ def listar_funcionarios():
 # Rota para adicionar um funcionário
 @app.route('/funcionarios', methods=['POST'])
 def adicionar_funcionario():
-    conexao = criar_conexao()
+    conexao = conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
@@ -81,7 +81,7 @@ def adicionar_funcionario():
 # Rota para listar clientes
 @app.route('/clientes', methods=['GET'])
 def listar_clientes():
-    conexao = criar_conexao()
+    conexao = conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
@@ -112,7 +112,7 @@ def listar_clientes():
 # Rota para adicionar um cliente
 @app.route('/clientes', methods=['POST'])
 def adicionar_cliente():
-    conexao = criar_conexao()
+    conexao = conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
@@ -148,7 +148,7 @@ def adicionar_cliente():
 # Rota para listar fornecedores
 @app.route('/fornecedores', methods=['GET'])
 def listar_fornecedores():
-    conexao = criar_conexao()
+    conexao = conexao.criar_conexao()
     cursor = conexao.cursor()
 
     try:
