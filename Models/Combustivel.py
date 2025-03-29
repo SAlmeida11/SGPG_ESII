@@ -1,42 +1,59 @@
-class Combustivel():
-    def __init__(self, nome: str, preco_litro: float, categoria: str, qtd_disponivel: float):
-        self.__nome = nome
-        self.__preco_litro = self.__validar_preco(preco_litro)
-        self.__categoria = categoria
-        self.__qtd_disponivel = self.__validar_qtdDisp(qtd_disponivel)
-    
-    def __validar_preco(self, preco):
-        if isinstance(preco, float):
-            return preco
-        else:
-            raise ValueError("Preco invalido.")
-    
-    def __validar_qtdDisp(self, qtd):
-        if isinstance(qtd, float):
-            return qtd
-        else:
-            raise ValueError("Quantidade de combustivel invalida.")
-    
-    def get_nome(self):
-        return self.__nome
-    
-    def set_nome(self, nome):
-        self.__nome = nome
-    
-    def get_preco_litro(self):
-        return self.__preco_litro
-    
-    def set_preco_litro(self, preco):
-        self.__preco_litro = self.__validar_preco(preco)
-    
-    def get_categoria(self):
-        return self.__categoria
-    
-    def set_categoria(self, categoria):
-        self.__categoria = categoria
-    
-    def get_qtd_disponivel(self):
-        return self.__qtd_disponivel
-    
-    def set_qtd_disponivel(self, qtd):
-        self.__qtd_disponivel = self.__validar_qtdDisp(qtd)
+from conexao import Conexao
+from mysql.connector import Error
+
+class CombustivelModel:
+    @staticmethod
+    def set_combustivel(nome, preco_litro, categoria, quantidade_disponivel):
+        """Cadastra um novo combustível no banco"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+
+            query = """
+                INSERT INTO combustivel (nome, preco_litro, categoria, quantidade_disponivel)
+                VALUES (%s, %s, %s, %s)
+            """
+            valores = (nome, preco_litro, categoria, quantidade_disponivel)
+
+            cursor.execute(query, valores)
+            conexao.commit()
+
+            return True  # Cadastro realizado com sucesso
+
+        except Exception as e:
+            print(f"Erro no Model: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+    @staticmethod
+    def get_combustivel():
+        conexao = Conexao.criar_conexao()
+        cursor = conexao.cursor()
+
+        try:
+            query = "SELECT idcombustivel, nome, categoria, preco_litro, quantidade_disponivel FROM combustivel"
+            cursor.execute(query)
+            combustiveis = cursor.fetchall()
+
+            lista_combustiveis = [
+                {
+                    "id": combustivel[0],
+                    "nome": combustivel[1],
+                    "categoria": combustivel[2],
+                    "preco_litro": float(combustivel[3]),
+                    "quantidade_disponivel": float(combustivel[4]),
+                }
+                for combustivel in combustiveis
+            ]
+
+            return lista_combustiveis
+        except Error as err:
+            print(f"MODEL: Erro ao listar combustíveis: {err}")
+            # Em vez de retornar um Response, retorne um valor padrão ou levante a exceção
+            return None
+        finally:
+            cursor.close()
+            conexao.close()

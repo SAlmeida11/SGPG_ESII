@@ -1,13 +1,16 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Blueprint
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 from conexao import Conexao
+from Controller.CtrCombustivel import CombustivelController
 
 app = Flask(__name__)
 #CORS(app) #Permite solicitações
-CORS(app, origins=["htpp://localhost:3000"]) 
+CORS(app, origins=["http://localhost:3000"])
 #Permite solicitações apenas da origin específica
+
+combustivel_bp = Blueprint("combustivel", __name__)
 
 @app.after_request
 def add_cors_headers(response):
@@ -236,6 +239,21 @@ def login():
     finally:
         cursor.close()
         conexao.close()
+
+@combustivel_bp.route("/combustiveis", methods=["POST"])
+def cadastrar_combustivel():
+    #Rota para cadastrar um novo combustível
+    dados = request.json
+    resposta, status = CombustivelController.cadastrar_combustivel(dados)
+    return jsonify(resposta), status
+
+@combustivel_bp.route("/combustiveis", methods=["GET"])
+def listar_combustiveis():
+    #Rota para listar todos os combustíveis
+    resposta, status = CombustivelController.listar_combustiveis()
+    return jsonify(resposta), status   
+
+app.register_blueprint(combustivel_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
