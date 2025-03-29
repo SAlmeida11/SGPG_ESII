@@ -51,6 +51,46 @@ def listar_funcionarios():
         cursor.close()
         conexao.close()
 
+#Rota para buscar funcionario
+@app.route('/funcionarios/<cpf>', methods=['GET'])
+def buscar_funcionario(cpf):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Consulta SQL para buscar o funcionário pelo CPF
+        query = """
+            SELECT nomeFun, cpf, admin, dtNascimento, vinculo_id_vinculo, endereco_id_endereco
+            FROM funcionario
+            WHERE cpf = %s
+        """
+        cursor.execute(query, (cpf,))
+        funcionario = cursor.fetchone()
+
+        # Se o funcionário não for encontrado, retorna 404
+        if funcionario is None:
+            return jsonify({"erro": "Funcionário não encontrado"}), 404
+
+        # Convertendo os dados para um formato JSON adequado
+        funcionario_data = {
+            "nomeFun": funcionario[0],
+            "cpf": funcionario[1],
+            "admin": funcionario[2],
+            "dtNascimento": funcionario[3],
+            "vinculo_id_vinculo": funcionario[4],
+            "endereco_id_endereco": funcionario[5]
+        }
+
+        return jsonify(funcionario_data), 200
+
+    except Error as err:
+        print(f"Erro ao buscar o funcionário: {err}")
+        return jsonify({"erro": "Erro ao buscar o funcionário"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()        
+
 # Rota para adicionar um funcionário
 @app.route('/cadfuncionarios', methods=['POST'])
 def adicionar_funcionario():
