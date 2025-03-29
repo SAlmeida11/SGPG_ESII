@@ -4,6 +4,7 @@ import mysql.connector
 from mysql.connector import Error
 from conexao import Conexao
 from Controller.CtrCombustivel import CombustivelController
+from Controller.CtrGerenciarReservatorio import ReservatorioController
 
 app = Flask(__name__)
 #CORS(app) #Permite solicitações
@@ -11,6 +12,7 @@ CORS(app, origins=["http://localhost:3000"])
 #Permite solicitações apenas da origin específica
 
 combustivel_bp = Blueprint("combustivel", __name__)
+reservatorio_bp = Blueprint("reservatorio", __name__)
 
 @app.after_request
 def add_cors_headers(response):
@@ -294,6 +296,19 @@ def listar_combustiveis():
     return jsonify(resposta), status   
 
 app.register_blueprint(combustivel_bp)
+
+@reservatorio_bp.route("/reservatorios", methods=["POST"])
+def cadastrar_reservatorio():
+    dados = request.json
+    resposta, status = ReservatorioController.cadastrar_reservatorio(dados)
+    return jsonify(resposta), status
+
+@reservatorio_bp.route("/reservatorios", methods=["GET"])
+def listar_reservatorios():
+    resposta, status = ReservatorioController.listar_reservatorios()
+    return jsonify(resposta), status
+
+app.register_blueprint(reservatorio_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)

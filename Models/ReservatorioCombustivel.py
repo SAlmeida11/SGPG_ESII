@@ -1,50 +1,64 @@
-class ReservatorioCombustivel():
-    def __init__(self, tipoCombustivel: str, capacidade: float, nivel: float, temperatura: float):
-        self.__tipoCombustivel = tipoCombustivel
-        self.__capacidade = capacidade
-        self.__nivel = nivel
-        self.__temperatura = temperatura
+from conexao import Conexao
+from mysql.connector import Error
 
-    def get_tipoCombustivel(self):
-        return self.__tipoCombustivel
-    
-    def get_capacidade(self):
-        return self.__capacidade
-    
-    def get_nivel(self):
-        return self.__nivel
-    
-    def get_temperatura(self):
-        return self.__temperatura
-    
-    def get_reservatorioCombustivel(self):
-        return {
-            'tipoCombustivel': self.get_tipoCombustivel(),
-            'capacidade': self.get_capacidade(),
-            'nivel': self.get_nivel(),
-            'temperatura': self.get_temperatura()
-        }
-    
-    def set_tipoCombustivel(self, tipoCombustivel):
-        if isinstance(tipoCombustivel, str):
-            self.__tipoCombustivel = tipoCombustivel
-            return True
-        return False
-    
-    def set_capacidade(self, capacidade):
-        if isinstance(capacidade, float):
-            self.__capacidade = capacidade
-            return True
-        return False
-    
-    def set_nivel(self, nivel):
-        if isinstance(nivel, float):
-            self.__nivel = nivel
-            return True
-        return False
-    
-    def set_temperatura(self, temperatura):
-        if isinstance(temperatura, float):
-            self.__temperatura = temperatura
-            return True
-        return False
+class ReservatorioModel:
+    @staticmethod
+    def set_reservatorio(capacidade, nivel, temperatura, idCombustivel):
+        """Cadastra um novo reservatório no banco"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+
+            query = """
+                INSERT INTO reservatorio (capacidade, nivel, temperatura, idcombustivel)
+                VALUES (%s, %s, %s, %s)
+            """
+            valores = (capacidade, nivel, temperatura, idCombustivel)
+
+            cursor.execute(query, valores)
+            conexao.commit()
+
+            return True  # Cadastro realizado com sucesso
+
+        except Exception as e:
+            print(f"Erro no Model Reservatório: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+    @staticmethod
+    def get_reservatorio():
+        """Lista todos os reservatórios cadastrados com o nome do combustível"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+
+            # Realiza um JOIN para obter o nome do combustível a partir da tabela combustivel
+            query = """
+                SELECT r.idreservatorio, c.nome, r.capacidade, r.nivel, r.temperatura
+                FROM reservatorio r
+                JOIN combustivel c ON r.idcombustivel = c.idcombustivel
+            """
+            cursor.execute(query)
+            reservatorios = cursor.fetchall()
+
+            lista_reservatorios = [
+                {
+                    "id": reservatorio[0],
+                    "combustivel": reservatorio[1],  # Nome do combustível
+                    "capacidade": float(reservatorio[2]),
+                    "nivelAtual": float(reservatorio[3]),
+                    "temperatura": float(reservatorio[4])
+                }
+                for reservatorio in reservatorios
+            ]
+
+            return lista_reservatorios
+        except Error as err:
+            print(f"MODEL: Erro ao listar reservatórios: {err}")
+            return None
+        finally:
+            cursor.close()
+            conexao.close()
