@@ -7,6 +7,8 @@ from Controller.CtrCliente import ClienteController
 from Controller.CtrCombustivel import CombustivelController
 from Controller.CtrGerenciarReservatorio import ReservatorioController
 from Controller.CtrItem import ItemController
+from Controller.CtrPagamento import PagamentoController
+from Controller.CtrVenda import VendaController
 
 app = Flask(__name__)
 #CORS(app) #Permite solicitações
@@ -19,6 +21,8 @@ reservatorio_bp = Blueprint("reservatorio", __name__)
 cliente_bp = Blueprint("cliente", __name__)
 endereco_bp = Blueprint("endereco", __name__)
 item_bp = Blueprint("item", __name__)
+pagamento_bp = Blueprint("pagamento", __name__)
+venda_bp = Blueprint("venda", __name__)
 
 @app.after_request
 def add_cors_headers(response):
@@ -346,6 +350,36 @@ def listar_itens():
     return jsonify(resposta), status   
 
 app.register_blueprint(item_bp)
+
+@pagamento_bp.route("/pagamento", methods=["POST"])
+def cadastrar_pagamento():
+    #Rota para cadastrar um novo pagamento
+    dados = request.json
+    resposta, status = PagamentoController.cadastrar_pagamento(dados)
+    return jsonify(resposta), status
+
+@pagamento_bp.route("/pagamento", methods=["GET"])
+def listar_pagamentos():
+    #Rota para listar todos os pagamentos
+    resposta, status = PagamentoController.listar_pagamentos()
+    return jsonify(resposta), status   
+
+app.register_blueprint(pagamento_bp)
+
+@venda_bp.route("/venda", methods=["POST"])
+def cadastrar_venda():
+    """Rota para cadastrar uma nova venda"""
+    dados = request.json
+    resposta, status = VendaController.cadastrar_venda(dados)
+    return jsonify(resposta), status
+
+@venda_bp.route("/venda", methods=["GET"])
+def listar_vendas():
+    """Rota para listar todas as vendas"""
+    resposta, status = VendaController.listar_vendas()
+    return jsonify(resposta), status
+
+app.register_blueprint(venda_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
