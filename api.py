@@ -232,7 +232,7 @@ def listar_fornecedores():
     cursor = conexao.cursor()
 
     try:
-        query = "SELECT cnpj, NomeFor, Encarregado, Status, `produtosFornecidos[]`, funcionario_cpf FROM fornecedor"
+        query = "SELECT cnpj, NomeFor, Encarregado, Status, produtosFornecidos, funcionario_cpf FROM fornecedor"
         cursor.execute(query)
         fornecedores = cursor.fetchall()
 
@@ -243,7 +243,7 @@ def listar_fornecedores():
                 "NomeFor": fornecedor[1],
                 "Encarregado": fornecedor[2],
                 "Status": fornecedor[3],
-                "`produtosFornecidos[]`": fornecedor[4],
+                "produtosFornecidos": fornecedor[4],
                 "funcionario_cpf": fornecedor[5]
             }
             for fornecedor in fornecedores
