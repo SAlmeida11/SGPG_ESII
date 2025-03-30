@@ -6,6 +6,7 @@ from conexao import Conexao
 from Controller.CtrCliente import ClienteController
 from Controller.CtrCombustivel import CombustivelController
 from Controller.CtrGerenciarReservatorio import ReservatorioController
+from Controller.CtrItem import ItemController
 
 app = Flask(__name__)
 #CORS(app) #Permite solicitações
@@ -17,6 +18,7 @@ reservatorio_bp = Blueprint("reservatorio", __name__)
 
 cliente_bp = Blueprint("cliente", __name__)
 endereco_bp = Blueprint("endereco", __name__)
+item_bp = Blueprint("item", __name__)
 
 @app.after_request
 def add_cors_headers(response):
@@ -328,6 +330,22 @@ def listar_reservatorios():
     return jsonify(resposta), status
 
 app.register_blueprint(reservatorio_bp)
+
+
+@item_bp.route("/item", methods=["POST"])
+def cadastrar_item():
+    #Rota para cadastrar um novo item
+    dados = request.json
+    resposta, status = ItemController.cadastrar_item(dados)
+    return jsonify(resposta), status
+
+@item_bp.route("/item", methods=["GET"])
+def listar_itens():
+    #Rota para listar todos os itens
+    resposta, status = ItemController.listar_itens()
+    return jsonify(resposta), status   
+
+app.register_blueprint(item_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
