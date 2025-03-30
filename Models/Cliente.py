@@ -1,67 +1,70 @@
-from datetime import date
+from conexao import Conexao
+from mysql.connector import Error
 
-# Se for utilizar enum para tipo do cliente
-"""from enum import Enum
-class TipoCliente(Enum):
-    COMUM = 'Comum'
-    VIP = 'Vip'"""
+class ClienteModel:
+    @staticmethod
+    def set_cliente(logradouro, numero, bairro, cidade, estado, cep, cpf, nome, tipo, dataCadastro):
+        """Cadastra um novo cliente no banco"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
 
-class Cliente():
-    def __init__(self, nome_cliente: str, cpf: str, tipo: str, data_cadastro: date):
-        self.__nome_cliente = nome_cliente
-        self.__cpf = self.__validar_cpf(cpf)
-        # Se for utilizar enum para tipo do cliente
-        """self.__tipo = self.__validar_tipo(tipo)"""
-        self.__tipo = tipo
-        self.__data_cadastro = self.__validar_data(data_cadastro)
-         
-    def __validar_data(self, data):
-        if isinstance(data, date):
-            return data
-        else:
-            raise ValueError("Tipo de data inadequado.")
-    
-    # Se for utilizar enum para tipo do cliente
-    """def __validar_tipo(self, tipo):
-        tipo = tipo.lower()
-        if isinstance(tipo, TipoCliente):
-            return tipo
-        else:
-            raise ValueError("Tipo de cliente inexistente.")"""
-    
-    def __validar_cpf(self, cpf):
-        aux = cpf.replace('-', '')
-        aux = cpf.replace('.', '')
+                        # Inserir endereço
+            endereco_query = """
+                INSERT INTO endereco (logradouro, numero, bairro, cidade, estado, cep) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            endereco_valores = (logradouro, numero, bairro, cidade, estado, cep)
+            cursor.execute(endereco_query, endereco_valores)
+            conexao.commit()
+            
+            # Recuperar ID do endereço recém-cadastrado
+            endereco_id = cursor.lastrowid
+            
+            # Inserir cliente com o ID do endereço
+            cliente_query = """
+                INSERT INTO cliente (cpf, nome, tipo, dataCadastro, endereco_id)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cliente_valores = (cpf, nome, tipo, dataCadastro, endereco_id)
+            cursor.execute(cliente_query, cliente_valores)
+            conexao.commit()
 
-        # Verificando apenas a quantidade de dígitos
-        if len(aux) == 11:
-            return cpf
-        else:
-            raise ValueError("CPF invalido.")
-        
-    def get_nome_cliente(self):
-        return self.__nome_cliente
-    
-    def set_nome_cliente(self, nome):
-        self.__nome_cliente = nome
-    
-    def get_cpf(self):
-        return self.__cpf
-    
-    def set_cpf(self, cpf):
-        self.__cpf = self.__validar_cpf(cpf)
-    
-    def get_tipo(self):
-        return self.__tipo
-    
-    def set_tipo(self, tipo):
-        # Se for utilizar enum para tipo do cliente
-        """self.__tipo = self.__validar_tipo(tipo)"""
-        
-        self.__tipo = tipo
+            return True  # Cadastro realizado com sucesso
 
-    def get_data_cadastro(self):
-        return self.__data_cadastro
-    
-    def set_data_cadastro(self, data):
-        self.__data_cadastro = self.__validar_data(data)
+        except Exception as e:
+            print(f"Erro no Model: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+    @staticmethod
+    def get_cliente():
+        conexao = Conexao.criar_conexao()
+        cursor = conexao.cursor()
+
+        try:
+            query = "SELECT cpf, nome, dataCadastro FROM cliente"
+            cursor.execute(query)
+            clientes = cursor.fetchall()
+
+            lista_clientes = [
+                {
+                    "cpf": cliente[0],
+                    "nome": cliente[1],
+                    "dataCadastro": cliente[2]
+                }
+                for cliente in clientes
+            ]
+
+            return lista_clientes
+        except Error as err:
+            print(f"MODEL: Erro ao listar clientes: {err}")
+            # Em vez de retornar um Response, retorne um valor padrão ou levante a exceção
+            return None
+        finally:
+            cursor.close()
+            conexao.close()
+
