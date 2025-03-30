@@ -3,6 +3,7 @@ from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 from conexao import Conexao
+from Controller.CtrCliente import ClienteController
 from Controller.CtrCombustivel import CombustivelController
 from Controller.CtrGerenciarReservatorio import ReservatorioController
 
@@ -13,6 +14,9 @@ CORS(app, origins=["http://localhost:3000"])
 
 combustivel_bp = Blueprint("combustivel", __name__)
 reservatorio_bp = Blueprint("reservatorio", __name__)
+
+cliente_bp = Blueprint("cliente", __name__)
+endereco_bp = Blueprint("endereco", __name__)
 
 @app.after_request
 def add_cors_headers(response):
@@ -282,9 +286,24 @@ def login():
         cursor.close()
         conexao.close()
 
+@cliente_bp.route("/clientes", methods=["POST"])
+def cadastrar_cliente():
+    #Rota para cadastrar um novo cliente
+    dados = request.json
+    resposta, status = ClienteController.cadastrar_cliente(dados)
+    return jsonify(resposta), status
+
+@cliente_bp.route("/clientes", methods=["GET"])
+def listar_clientes():
+    #Rota para listar todos os clientes
+    resposta, status = ClienteController.listar_clientes()
+    return jsonify(resposta), status 
+
+app.register_blueprint(cliente_bp)
+
 @combustivel_bp.route("/combustiveis", methods=["POST"])
 def cadastrar_combustivel():
-    #Rota para cadastrar um novo combustível
+    #Rota para cadastrar um novo cliente
     dados = request.json
     resposta, status = CombustivelController.cadastrar_combustivel(dados)
     return jsonify(resposta), status
