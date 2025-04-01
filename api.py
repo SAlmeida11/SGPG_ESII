@@ -70,11 +70,15 @@ def buscar_funcionario(cpf):
     cursor = conexao.cursor()
 
     try:
-        # Consulta SQL para buscar o funcionário pelo CPF
+        # Nova consulta SQL para buscar o funcionário pelo CPF, incluindo informações de endereço e vínculo
         query = """
-            SELECT nomeFun, cpf, admin, dtNascimento, vinculo_id_vinculo, endereco_id_endereco
-            FROM funcionario
-            WHERE cpf = %s
+            SELECT f.nomeFun, f.cpf, f.dtNascimento, f.admin, 
+                   e.logradouro, e.numero, e.cidade, e.estado, e.cep, 
+                   v.salario, v.dtContratacao 
+            FROM funcionario f
+            JOIN endereco e ON e.id_endereco = f.endereco_id_endereco
+            JOIN vinculo v ON v.id_vinculo = f.vinculo_id_vinculo
+            WHERE f.cpf = %s
         """
         cursor.execute(query, (cpf,))
         funcionario = cursor.fetchone()
@@ -87,10 +91,19 @@ def buscar_funcionario(cpf):
         funcionario_data = {
             "nomeFun": funcionario[0],
             "cpf": funcionario[1],
-            "admin": funcionario[2],
-            "dtNascimento": funcionario[3],
-            "vinculo_id_vinculo": funcionario[4],
-            "endereco_id_endereco": funcionario[5]
+            "dtNascimento": funcionario[2],
+            "admin": funcionario[3],
+            "endereco": {
+                "logradouro": funcionario[4],
+                "numero": funcionario[5],
+                "cidade": funcionario[6],
+                "estado": funcionario[7],
+                "cep": funcionario[8]
+            },
+            "vinculo": {
+                "salario": funcionario[9],
+                "dtContratacao": funcionario[10]
+            }
         }
 
         return jsonify(funcionario_data), 200
@@ -101,7 +114,8 @@ def buscar_funcionario(cpf):
 
     finally:
         cursor.close()
-        conexao.close()        
+        conexao.close()
+
 
 @app.route('/cadfuncionarios', methods=['POST'])
 def adicionar_funcionario():
