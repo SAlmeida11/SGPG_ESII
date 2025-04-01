@@ -103,7 +103,6 @@ def buscar_funcionario(cpf):
         cursor.close()
         conexao.close()        
 
-# Rota para adicionar um funcionário
 @app.route('/cadfuncionarios', methods=['POST'])
 def adicionar_funcionario():
     conexao = Conexao.criar_conexao()
@@ -113,60 +112,69 @@ def adicionar_funcionario():
         # Obtendo os dados do corpo da requisição
         dados = request.json
 
-        #Tabela Vinculo
-        id_endereco = 7 #dados.get("id_endereco")
+        # Dados da tabela Endereco
         logradouro = dados.get("logradouro")
         numero = dados.get("numero")
-        bairro = "Brooklyn"#dados.get("bairro")
+        bairro = dados.get("bairro", "Brooklyn")  # Definição de valor padrão
         cidade = dados.get("cidade")
         estado = dados.get("estado")
         cep = dados.get("cep")
 
-        #Tabela Endereco
-        id_vinculo = 'V010'#dados.get("id_vinculo")
+        # Dados da tabela Vinculo
         dtContratacao = dados.get("dtContratacao")
         salario = dados.get("salario")
-        status = 1 #dados.get("status")
+        status = 1  # Definindo status padrão
 
-        #Tabela Funcionario
+        # Dados da tabela Funcionario
         nomeFun = dados.get("nome")
         cpf = dados.get("cpf")
         dtNascimento = dados.get("dataNascimento")
-        admin = 0#int(dados.get("admin", 0))  # Considera 0 como padrão para admin
+        admin = 0  # Definindo admin padrão como 0
 
         # Validação dos dados recebidos
-        if not nomeFun or not cpf or not dtNascimento:
+        if not all([nomeFun, cpf, dtNascimento, logradouro, numero, cidade, estado, cep, dtContratacao, salario]):
             return jsonify({"erro": "Dados incompletos"}), 400
 
-        query = """
-            START TRANSACTION;
+        # Iniciar transação
+        conexao.start_transaction()
 
-            -- 1. Inserir um endereço
-            INSERT INTO endereco (id_endereco, logradouro, numero, bairro, cidade, estado, cep)
-            VALUES (%s, %s, %s, %s, %s, %s, %s);
-
-            -- 2. Inserir um vínculo empregatício
-            INSERT INTO vinculo (id_vinculo, dtContratacao, salario, status)
-            VALUES (%s, %s, %s, %s);
-
-            -- 3. Inserir o funcionário
-            INSERT INTO funcionario (nomeFun, dtNascimento, cpf, admin, vinculo_id_vinculo, endereco_id_endereco)
-            VALUES (%s, %s, %s, %s);
-
-            -- Se tudo der certo, confirma a transação
-            COMMIT;
+        # Inserir endereço
+        query_endereco = """
+            INSERT INTO endereco (logradouro, numero, bairro, cidade, estado, cep)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (id_endereco, logradouro, numero, bairro, cidade, estado, cep, id_vinculo, dtContratacao, salario, status, nomeFun, cpf, dtNascimento, admin))
+        cursor.execute(query_endereco, (logradouro, numero, bairro, cidade, estado, cep))
+        id_endereco = cursor.lastrowid  # Pega o ID gerado
+
+        # Inserir vínculo empregatício
+        query_vinculo = """
+            INSERT INTO vinculo (dtContratacao, salario, status)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(query_vinculo, (dtContratacao, salario, status))
+        id_vinculo = cursor.lastrowid  # Pega o ID gerado
+
+        # Inserir funcionário
+        query_funcionario = """
+            INSERT INTO funcionario (nomeFun, dtNascimento, cpf, admin, vinculo_id_vinculo, endereco_id_endereco)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query_funcionario, (nomeFun, dtNascimento, cpf, admin, id_vinculo, id_endereco))
+
+        # Confirmar transação
         conexao.commit()
 
         return jsonify({"mensagem": "Funcionário cadastrado com sucesso!", "id": cursor.lastrowid}), 201
+
     except Error as err:
-        conexao.rollback()
+        conexao.rollback()  # Reverte mudanças em caso de erro
         print(f"Erro ao adicionar funcionário: {err}")
         return jsonify({"erro": "Erro ao cadastrar funcionário"}), 500
+
     finally:
         cursor.close()
         conexao.close()
+
 
 # Rota para listar clientes
 @app.route('/clientes', methods=['GET'])
