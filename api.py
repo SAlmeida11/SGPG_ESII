@@ -116,7 +116,7 @@ def buscar_funcionario(cpf):
         cursor.close()
         conexao.close()
 
-
+#rota para cadastrar funcionario
 @app.route('/cadfuncionarios', methods=['POST'])
 def adicionar_funcionario():
     conexao = Conexao.criar_conexao()
@@ -184,6 +184,85 @@ def adicionar_funcionario():
         conexao.rollback()  # Reverte mudanças em caso de erro
         print(f"Erro ao adicionar funcionário: {err}")
         return jsonify({"erro": "Erro ao cadastrar funcionário"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+#rota para remover funcionario
+@app.route('/delete-funcionario/<cpf>', methods=['DELETE'])
+def remover_funcionario(cpf):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Verifica se o funcionário existe
+        query_verificar = "SELECT cpf FROM funcionario WHERE cpf = %s"
+        cursor.execute(query_verificar, (cpf,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Funcionário não encontrado"}), 404
+
+        # Remove o funcionário
+        query_remover = "DELETE FROM funcionario WHERE cpf = %s"
+        cursor.execute(query_remover, (cpf,))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Funcionário removido com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao remover o funcionário: {err}")
+        return jsonify({"erro": "Erro ao remover o funcionário"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+@app.route('/editar-funcionario/<cpf>', methods=['PUT'])
+def editar_funcionario(cpf):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+    dados = request.json
+
+    try:
+        # Verifica se o funcionário existe
+        query_verificar = "SELECT cpf FROM funcionario WHERE cpf = %s"
+        cursor.execute(query_verificar, (cpf,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Funcionário não encontrado"}), 404
+
+        # Atualiza os dados do funcionário
+        query_atualizar = """
+            UPDATE funcionario 
+            SET nomeFun = %s, dtNascimento = %s, admin = %s 
+            WHERE cpf = %s
+        """
+        cursor.execute(query_atualizar, (dados.get("nomeFun"), dados.get("dtNascimento"), dados.get("admin"), cpf))
+
+        # Atualiza os dados do endereço
+        query_atualizar_endereco = """
+            UPDATE endereco 
+            SET logradouro = %s, numero = %s, cidade = %s, estado = %s, cep = %s
+            WHERE id_endereco = (SELECT endereco_id_endereco FROM funcionario WHERE cpf = %s)
+        """
+        cursor.execute(query_atualizar_endereco, (dados["endereco"].get("logradouro"), dados["endereco"].get("numero"), 
+                                                  dados["endereco"].get("cidade"), dados["endereco"].get("estado"), 
+                                                  dados["endereco"].get("cep"), cpf))
+
+        # Atualiza os dados do vínculo
+        query_atualizar_vinculo = """
+            UPDATE vinculo 
+            SET salario = %s, dtContratacao = %s 
+            WHERE id_vinculo = (SELECT vinculo_id_vinculo FROM funcionario WHERE cpf = %s)
+        """
+        cursor.execute(query_atualizar_vinculo, (dados["vinculo"].get("salario"), dados["vinculo"].get("dtContratacao"), cpf))
+        
+        conexao.commit()
+
+        return jsonify({"mensagem": "Funcionário atualizado com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao editar o funcionário: {err}")
+        return jsonify({"erro": "Erro ao editar o funcionário"}), 500
 
     finally:
         cursor.close()
