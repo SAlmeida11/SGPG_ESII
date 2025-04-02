@@ -568,21 +568,72 @@ app.register_blueprint(pagamento_bp)
 
 #ROTAS PARA VENDAS
 #rota para cadastrar vendas
-@venda_bp.route("/venda", methods=["POST"])
+@app.route('/cadvenda', methods=['POST'])
 def cadastrar_venda():
-    """Rota para cadastrar uma nova venda"""
-    dados = request.json
-    resposta, status = VendaController.cadastrar_venda(dados)
-    return jsonify(resposta), status
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Obtendo os dados do corpo da requisição
+        dados = request.json
+
+        cpf_cliente = dados.get("cpfCliente")
+        cpf_funcionario = dados.get("cpfFuncionario")
+        itens = dados.get("itens")
+        valor = dados.get("valor")
+        tipo_pagamento = dados.get("tipoPagamento")
+
+        # Validação dos dados recebidos
+        if not all([cpf_cliente, cpf_funcionario, itens, valor, tipo_pagamento]):
+            return jsonify({"erro": "Dados incompletos"}), 400
+
+        # Iniciar transação
+        conexao.start_transaction()
+
+        # Inserir venda na tabela registroVenda
+        query_venda = """
+            INSERT INTO registroVenda (cpfCliente, cpfFuncionario, itens, valor, tipoPagamento)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(query_venda, (cpf_cliente, cpf_funcionario, itens, valor, tipo_pagamento))
+
+        # Confirmar transação
+        conexao.commit()
+
+        return jsonify({"mensagem": "Venda cadastrada com sucesso!", "id": cursor.lastrowid}), 201
+
+    except Error as err:
+        conexao.rollback()  # Reverte mudanças em caso de erro
+        print(f"Erro ao cadastrar venda: {err}")
+        return jsonify({"erro": "Erro ao cadastrar venda"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
 
 #rota para listar vendas
-@venda_bp.route("/venda", methods=["GET"])
+@app.route('/listarvendas', methods=['GET'])
 def listar_vendas():
-    """Rota para listar todas as vendas"""
-    resposta, status = VendaController.listar_vendas()
-    return jsonify(resposta), status
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor(dictionary=True)  # Retorna os resultados como dicionário
 
-app.register_blueprint(venda_bp)
+    try:
+        # Consulta todas as vendas na tabela registroVenda
+        query = "SELECT * FROM registroVenda"
+        cursor.execute(query)
+        vendas = cursor.fetchall()
+
+        return jsonify(vendas), 200
+
+    except Error as err:
+        print(f"Erro ao listar vendas: {err}")
+        return jsonify({"erro": "Erro ao listar vendas"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+
 
 #Rota login
 @app.route('/login', methods=['POST'])
