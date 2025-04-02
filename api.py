@@ -316,28 +316,55 @@ def adicionar_cliente():
         nomeCliente = dados.get("nomeCliente")
         tipo = dados.get("tipo")
         dataCadastro = dados.get("dataCadastro")
-        endereco_id_endereco = dados.get("endereco_id_endereco")
+
+        logradouro = dados.get("logradouro")
+        numero = dados.get("numero")
+        bairro = dados.get("bairro")
+        cidade = dados.get("cidade")
+        estado = dados.get("estado")
+        cep = dados.get("cep")
 
         # Validação dos dados recebidos
-        if not cpf or not nomeCliente or not tipo or not dataCadastro or not endereco_id_endereco:
+        if not cpf or not nomeCliente or not tipo or not dataCadastro or not logradouro or not numero or not bairro or not cidade or not estado or not cep:
             return jsonify({"erro": "Dados incompletos"}), 400
 
-        query = """
-            INSERT INTO cliente 
-            (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco)
+        # Criar conexão com o banco
+        conexao = Conexao.criar_conexao()
+        cursor = conexao.cursor()
+
+        # Inserir endereço
+        query_endereco = """
+            INSERT INTO endereco (logradouro, numero, bairro, cidade, estado, cep) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        valores_endereco = (logradouro, numero, bairro, cidade, estado, cep)
+        cursor.execute(query_endereco, valores_endereco)
+        conexao.commit()
+
+        # Recuperar o ID do endereço cadastrado
+        endereco_id_endereco = cursor.lastrowid
+
+        # Inserir cliente com ID do endereço
+        query_cliente = """
+            INSERT INTO cliente (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco) 
             VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco))
+        valores_cliente = (cpf, nomeCliente, tipo, dataCadastro, endereco_id_endereco)
+        cursor.execute(query_cliente, valores_cliente)
         conexao.commit()
 
         return jsonify({"mensagem": "Cliente cadastrado com sucesso!", "id": cursor.lastrowid}), 201
+
     except Error as err:
         conexao.rollback()
         print(f"Erro ao adicionar cliente: {err}")
         return jsonify({"erro": "Erro ao cadastrar cliente"}), 500
+
     finally:
-        cursor.close()
-        conexao.close()
+        if cursor:
+            cursor.close()
+        if conexao:
+            conexao.close()
 
 #Rota para cadastrar cliente
 @cliente_bp.route("/clientes", methods=["POST"])
