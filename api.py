@@ -580,6 +580,49 @@ def editar_item(CodigoBarras):
         cursor.close()
         conexao.close()
 
+# Rota para atualizar quantidade de itens
+@app.route('/atualizar-quantidade/<CodigoBarras>', methods=['PUT'])
+def atualizar_quantidade(CodigoBarras):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+    dados = request.json
+    quantidade_removida = dados.get("quantidade")
+
+    try:
+        # Verifica se o item existe e obtém a quantidade atual em estoque
+        query_verificar = "SELECT QtdeEstoque FROM item WHERE CodigoBarras = %s"
+        cursor.execute(query_verificar, (CodigoBarras,))
+        resultado = cursor.fetchone()
+        
+        if resultado is None:
+            return jsonify({"erro": "Item não encontrado"}), 404
+
+        qtde_atual = resultado[0]
+        
+        if quantidade_removida > qtde_atual:
+            return jsonify({"erro": "Quantidade insuficiente em estoque"}), 400
+
+        # Atualiza a quantidade em estoque
+        nova_qtde = qtde_atual - quantidade_removida
+        query_atualizar = """
+            UPDATE item
+            SET QtdeEstoque = %s
+            WHERE CodigoBarras = %s
+        """
+        cursor.execute(query_atualizar, (nova_qtde, CodigoBarras))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Quantidade atualizada com sucesso", "nova_qtde": nova_qtde}), 200
+
+    except Error as err:
+        print(f"Erro ao atualizar a quantidade: {err}")
+        return jsonify({"erro": f"Erro ao atualizar a quantidade: {err}"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+
 
 app.register_blueprint(item_bp)
 
