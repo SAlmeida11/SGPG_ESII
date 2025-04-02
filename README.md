@@ -9,7 +9,7 @@ Pericles Maikon de Jesus Costa<br/>
 Rafael Nascimento Andrade<br/>
 Saula de Almeida
 
-Instruções para desenvolvedores
+Instruções para desenvolvedores<br/>
 Antes de inciar a instalação, certifique-se de ter o Python nas versões mais recentes instalados. Caso ainda não tenha instalado, abaixo estão os links para download: https://www.python.org/downloads/. Em seguida, basta clonar o repositório com git clone e seguir os passos seguintes.
 
 Instalação do Backend
