@@ -15,9 +15,10 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000"])
 #Permite solicitações apenas da origin específica
 
+
+#Bluprints
 combustivel_bp = Blueprint("combustivel", __name__)
 reservatorio_bp = Blueprint("reservatorio", __name__)
-
 cliente_bp = Blueprint("cliente", __name__)
 endereco_bp = Blueprint("endereco", __name__)
 item_bp = Blueprint("item", __name__)
@@ -31,6 +32,7 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
+#ROTAS FUNCIONARIOS
 # Rota para listar funcionários
 @app.route('/funcionarios', methods=['GET'])
 def listar_funcionarios():
@@ -269,6 +271,7 @@ def editar_funcionario(cpf):
         conexao.close()
 
 
+#ROTAS CLIENTES
 # Rota para listar clientes
 @app.route('/clientes', methods=['GET'])
 def listar_clientes():
@@ -336,6 +339,25 @@ def adicionar_cliente():
         cursor.close()
         conexao.close()
 
+#Rota para cadastrar cliente
+@cliente_bp.route("/clientes", methods=["POST"])
+def cadastrar_cliente():
+    #Rota para cadastrar um novo cliente
+    dados = request.json
+    resposta, status = ClienteController.cadastrar_cliente(dados)
+    return jsonify(resposta), status
+
+#Rota para listar clientes
+@cliente_bp.route("/clientes", methods=["GET"])
+def listar_clientes():
+    #Rota para listar todos os clientes
+    resposta, status = ClienteController.listar_clientes()
+    return jsonify(resposta), status 
+
+app.register_blueprint(cliente_bp)
+
+
+#ROTA FORNECEDORES
 # Rota para listar fornecedores
 @app.route('/fornecedores', methods=['GET'])
 def listar_fornecedores():
@@ -368,6 +390,201 @@ def listar_fornecedores():
         cursor.close()
         conexao.close()
 
+
+#ROTAS COMBUSTIVEIS
+#rota para cadastrar combustiveis
+@combustivel_bp.route("/combustiveis", methods=["POST"])
+def cadastrar_combustivel():
+    #Rota para cadastrar um novo combustiveis
+    dados = request.json
+    resposta, status = CombustivelController.cadastrar_combustivel(dados)
+    return jsonify(resposta), status
+
+#rota para listar combustiveis
+@combustivel_bp.route("/combustiveis", methods=["GET"])
+def listar_combustiveis():
+    #Rota para listar todos os combustíveis
+    resposta, status = CombustivelController.listar_combustiveis()
+    return jsonify(resposta), status   
+
+app.register_blueprint(combustivel_bp)
+
+#ROTA RESERVATORIOS
+#rota para cadastrar reservatorios
+@reservatorio_bp.route("/reservatorios", methods=["POST"])
+def cadastrar_reservatorio():
+    dados = request.json
+    resposta, status = ReservatorioController.cadastrar_reservatorio(dados)
+    return jsonify(resposta), status
+
+#rota para listar reservatorios
+@reservatorio_bp.route("/reservatorios", methods=["GET"])
+def listar_reservatorios():
+    resposta, status = ReservatorioController.listar_reservatorios()
+    return jsonify(resposta), status
+
+app.register_blueprint(reservatorio_bp)
+
+#ROTAS ITEM
+#rota para cadastrar itens
+@item_bp.route("/item", methods=["POST"])
+def cadastrar_item():
+    #Rota para cadastrar um novo item
+    dados = request.json
+    resposta, status = ItemController.cadastrar_item(dados)
+    return jsonify(resposta), status
+
+#rota para listar itens
+@item_bp.route("/item", methods=["GET"])
+def listar_itens():
+    #Rota para listar todos os itens
+    resposta, status = ItemController.listar_itens()
+    return jsonify(resposta), status   
+
+#rota para remover item
+@app.route('/delete-item/<codigo>', methods=['DELETE'])
+def remover_item(codigo):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Verifica se o item existe
+        query_verificar = "SELECT CodigoBarras from item where CodigoBarras = %s"
+        cursor.execute(query_verificar, (codigo,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Item não encontrado"}), 404
+
+        # Remove o funcionário
+        query_remover = "DELETE FROM item WHERE CodigoBarras = %s"
+        cursor.execute(query_remover, (codigo,))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Item removido com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao remover o Item: {err}")
+        return jsonify({"erro": "Erro ao remover o Item"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+#Rota para buscar item
+@app.route('/item/<CodigoBarras>', methods=['GET'])
+def buscar_item(CodigoBarras):
+    print(f"Buscando item com Código de Barras: {CodigoBarras}")  # Debug
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        query = """
+            SELECT NomeItem, Categoria, QtdeEstoque, PrecUnitario, CodigoBarras from item where CodigoBarras = %s
+        """
+        cursor.execute(query, (CodigoBarras,))
+        item = cursor.fetchone()
+
+        if item is None:
+            return jsonify({"erro": "Item não encontrado"}), 404
+
+        item_data = {
+            "NomeItem": item[0],
+            "Categoria": item[1],
+            "QtdeEstoque": item[2],
+            "PrecUnitario": item[3],
+            "CodigoBarras": item[4]
+        }
+
+        return jsonify(item_data), 200
+
+    except Error as err:
+        print(f"Erro ao buscar o item: {err}")
+        return jsonify({"erro": "Erro ao buscar o item"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+#Rota para editar item
+@app.route('/editar-item/<CodigoBarras>', methods=['PUT'])
+def editar_item(CodigoBarras):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+    dados = request.json
+
+    try:
+        # Verifica se o item existe
+        query_verificar = "SELECT CodigoBarras FROM item WHERE CodigoBarras = %s"
+        cursor.execute(query_verificar, (CodigoBarras,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Item não encontrado"}), 404
+
+        # Atualiza os dados do item
+        query_atualizar = """
+            UPDATE item
+            SET Categoria = %s, NomeItem = %s, PrecUnitario = %s, QtdeEstoque = %s, funcionario_cpf = %s
+            WHERE CodigoBarras = %s
+        """
+        cursor.execute(query_atualizar, (
+            dados.get("Categoria"),
+            dados.get("NomeItem"),
+            dados.get("PrecUnitario"),
+            dados.get("QtdeEstoque"),
+            dados.get("funcionario_cpf"),
+            CodigoBarras
+        ))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Item atualizado com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao editar o item: {err}")
+        return jsonify({"erro": f"Erro ao editar o item: {err}"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+app.register_blueprint(item_bp)
+
+#ROTAS PAGAMENTO
+#rota para cadastrar pagamento
+@pagamento_bp.route("/pagamento", methods=["POST"])
+def cadastrar_pagamento():
+    #Rota para cadastrar um novo pagamento
+    dados = request.json
+    resposta, status = PagamentoController.cadastrar_pagamento(dados)
+    return jsonify(resposta), status
+
+#rota para listar pagamentos
+@pagamento_bp.route("/pagamento", methods=["GET"])
+def listar_pagamentos():
+    #Rota para listar todos os pagamentos
+    resposta, status = PagamentoController.listar_pagamentos()
+    return jsonify(resposta), status   
+
+app.register_blueprint(pagamento_bp)
+
+
+#ROTAS PARA VENDAS
+#rota para cadastrar vendas
+@venda_bp.route("/venda", methods=["POST"])
+def cadastrar_venda():
+    """Rota para cadastrar uma nova venda"""
+    dados = request.json
+    resposta, status = VendaController.cadastrar_venda(dados)
+    return jsonify(resposta), status
+
+#rota para listar vendas
+@venda_bp.route("/venda", methods=["GET"])
+def listar_vendas():
+    """Rota para listar todas as vendas"""
+    resposta, status = VendaController.listar_vendas()
+    return jsonify(resposta), status
+
+app.register_blueprint(venda_bp)
+
+#Rota login
 @app.route('/login', methods=['POST'])
 def login():
     dados = request.json
@@ -393,128 +610,5 @@ def login():
         cursor.close()
         conexao.close()
 
-@cliente_bp.route("/clientes", methods=["POST"])
-def cadastrar_cliente():
-    #Rota para cadastrar um novo cliente
-    dados = request.json
-    resposta, status = ClienteController.cadastrar_cliente(dados)
-    return jsonify(resposta), status
-
-@cliente_bp.route("/clientes", methods=["GET"])
-def listar_clientes():
-    #Rota para listar todos os clientes
-    resposta, status = ClienteController.listar_clientes()
-    return jsonify(resposta), status 
-
-app.register_blueprint(cliente_bp)
-
-@combustivel_bp.route("/combustiveis", methods=["POST"])
-def cadastrar_combustivel():
-    #Rota para cadastrar um novo cliente
-    dados = request.json
-    resposta, status = CombustivelController.cadastrar_combustivel(dados)
-    return jsonify(resposta), status
-
-@combustivel_bp.route("/combustiveis", methods=["GET"])
-def listar_combustiveis():
-    #Rota para listar todos os combustíveis
-    resposta, status = CombustivelController.listar_combustiveis()
-    return jsonify(resposta), status   
-
-app.register_blueprint(combustivel_bp)
-
-@reservatorio_bp.route("/reservatorios", methods=["POST"])
-def cadastrar_reservatorio():
-    dados = request.json
-    resposta, status = ReservatorioController.cadastrar_reservatorio(dados)
-    return jsonify(resposta), status
-
-@reservatorio_bp.route("/reservatorios", methods=["GET"])
-def listar_reservatorios():
-    resposta, status = ReservatorioController.listar_reservatorios()
-    return jsonify(resposta), status
-
-app.register_blueprint(reservatorio_bp)
-
-
-@item_bp.route("/item", methods=["POST"])
-def cadastrar_item():
-    #Rota para cadastrar um novo item
-    dados = request.json
-    resposta, status = ItemController.cadastrar_item(dados)
-    return jsonify(resposta), status
-
-@item_bp.route("/item", methods=["GET"])
-def listar_itens():
-    #Rota para listar todos os itens
-    resposta, status = ItemController.listar_itens()
-    return jsonify(resposta), status   
-
-app.register_blueprint(item_bp)
-
-@pagamento_bp.route("/pagamento", methods=["POST"])
-def cadastrar_pagamento():
-    #Rota para cadastrar um novo pagamento
-    dados = request.json
-    resposta, status = PagamentoController.cadastrar_pagamento(dados)
-    return jsonify(resposta), status
-
-@pagamento_bp.route("/pagamento", methods=["GET"])
-def listar_pagamentos():
-    #Rota para listar todos os pagamentos
-    resposta, status = PagamentoController.listar_pagamentos()
-    return jsonify(resposta), status   
-
-app.register_blueprint(pagamento_bp)
-
-@venda_bp.route("/venda", methods=["POST"])
-def cadastrar_venda():
-    """Rota para cadastrar uma nova venda"""
-    dados = request.json
-    resposta, status = VendaController.cadastrar_venda(dados)
-    return jsonify(resposta), status
-
-@venda_bp.route("/venda", methods=["GET"])
-def listar_vendas():
-    """Rota para listar todas as vendas"""
-    resposta, status = VendaController.listar_vendas()
-    return jsonify(resposta), status
-
-app.register_blueprint(venda_bp)
-
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-"""from flask import Flask, jsonify, request
-from Controller.CtrTeste import FuncionarioController
-
-app = Flask(__name__)
-controller = FuncionarioController()
-
-@app.route('/funcionarios', methods=['GET'])
-def listar_funcionarios():
-    funcionarios = controller.obter_lista_funcionarios()
-    return jsonify(funcionarios)
-
-@app.route('/funcionarios', methods=['POST'])
-def adicionar_funcionario():
-    data = request.json
-    controller.criar_funcionario(data['nomeFun'], data['dtNascimento'], data['cpf'], data['admin'], data['vinculo_id_vinculo'], data['endereco_id_endereco'])
-    return jsonify({"message": "Funcionário adicionado com sucesso!"})
-
-@app.route('/funcionarios/<int:cpf>', methods=['PUT'])
-def atualizar_funcionario(cpf):
-    data = request.json
-    controller.editar_funcionario(cpf, data['nomeFun'], data['dtNascimento'], data['cpf'], data['admin'])
-    return jsonify({"message": "Funcionário atualizado com sucesso!"})
-
-@app.route('/funcionarios/<int:cpf>', methods=['DELETE'])
-def excluir_funcionario(cpf):
-    controller.deletar_funcionario(cpf)
-    return jsonify({"message": "Funcionário excluído com sucesso!"})
-
-if __name__ == '__main__':
-    app.run(debug=True)
-"""
