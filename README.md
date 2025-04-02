@@ -1,5 +1,4 @@
-Sistema de Gestão Posto de Gasolina (SGPG)
-Equipe
+Sistema de Gestão Posto de Gasolina (SGPG)<br/>
 Os desenvolvedores integrantes desse projeto são:
 
 Elias da Costa Rodrigues<br/>
