@@ -57,3 +57,50 @@ class CombustivelModel:
         finally:
             cursor.close()
             conexao.close()
+    
+    @staticmethod
+    def update_combustivel(idCombustivel, nome, preco_litro, categoria, quantidade_disponivel):
+        """Atualiza os dados de um combustível existente"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+
+            query = """
+                UPDATE combustivel 
+                SET nome = %s, preco_litro = %s, categoria = %s, quantidade_disponivel = %s 
+                WHERE idcombustivel = %s
+            """
+            valores = (nome, preco_litro, categoria, quantidade_disponivel, idCombustivel)
+            cursor.execute(query, valores)
+            conexao.commit()
+
+            return cursor.rowcount > 0  
+
+        except Exception as e:
+            print(f"Erro ao atualizar combustível: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+    @staticmethod
+    def delete_combustivel(idCombustivel):
+        """Deleta um combustível a partir do seu ID"""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+
+            query = "DELETE FROM combustivel WHERE idcombustivel = %s"
+            cursor.execute(query, (idCombustivel,))
+            conexao.commit()
+
+            return cursor.rowcount > 0  
+
+        except Exception as e:
+            print(f"Erro ao deletar combustível: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()

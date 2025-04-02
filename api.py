@@ -407,6 +407,19 @@ def listar_combustiveis():
     resposta, status = CombustivelController.listar_combustiveis()
     return jsonify(resposta), status   
 
+#rota para atualizar combustíveis
+@combustivel_bp.route("/combustiveis/<int:id>", methods=["PUT"])
+def atualizar_combustivel(id):
+    dados = request.json
+    resposta, status = CombustivelController.atualizar_combustivel(id, dados)
+    return jsonify(resposta), status
+
+#rota para deletar combustíveis
+@combustivel_bp.route("/combustiveis/<int:id>", methods=["DELETE"])
+def excluir_combustivel(id):
+    resposta, status = CombustivelController.excluir_combustivel(id)
+    return jsonify(resposta), status
+
 app.register_blueprint(combustivel_bp)
 
 #ROTA RESERVATORIOS
@@ -421,6 +434,29 @@ def cadastrar_reservatorio():
 @reservatorio_bp.route("/reservatorios", methods=["GET"])
 def listar_reservatorios():
     resposta, status = ReservatorioController.listar_reservatorios()
+    return jsonify(resposta), status
+
+#rota para atualizar um reservatório
+@reservatorio_bp.route("/reservatorios/<int:id>", methods=["PUT"])
+def atualizar_reservatorio(id):
+    dados = request.json
+    resposta, status = ReservatorioController.atualizar_reservatorio(id, dados)
+
+    # Verifica se o nível atualizado está abaixo de 30% da capacidade
+    if status == 200 and "nivelAtual" in dados and "capacidade" in dados:
+        nivel_atual = float(dados["nivelAtual"])
+        capacidade = float(dados["capacidade"]) if "capacidade" in dados else 100  # Valor padrão caso não venha
+        percentual = (nivel_atual / capacidade) * 100
+
+        if percentual < 30:
+            resposta["alerta"] = "⚠️ Atenção! O nível do reservatório está abaixo de 30%."
+
+    return jsonify(resposta), status
+
+#rota para deletar um reservatório
+@reservatorio_bp.route("/reservatorios/<int:id>", methods=["DELETE"])
+def deletar_reservatorio(id):
+    resposta, status = ReservatorioController.deletar_reservatorio(id)
     return jsonify(resposta), status
 
 app.register_blueprint(reservatorio_bp)

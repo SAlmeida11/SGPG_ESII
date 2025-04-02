@@ -62,3 +62,51 @@ class ReservatorioModel:
         finally:
             cursor.close()
             conexao.close()
+
+    @staticmethod
+    def update_reservatorio(idReservatorio, capacidade, nivel, temperatura, idCombustivel):
+        """Atualiza os dados de um reservatório existente."""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+            query = """
+                UPDATE reservatorio
+                SET capacidade = %s, nivel = %s, temperatura = %s, idcombustivel = %s
+                WHERE idReservatorio = %s
+            """
+            valores = (capacidade, nivel, temperatura, idCombustivel, idReservatorio)
+            cursor.execute(query, valores)
+            conexao.commit()
+
+            # Verifica se alguma linha foi afetada
+            return cursor.rowcount > 0
+
+        except Exception as e:
+            print(f"Erro ao atualizar reservatório: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+
+    @staticmethod
+    def delete_reservatorio(idReservatorio):
+        """Deleta um reservatório a partir do seu ID."""
+        try:
+            conexao = Conexao.criar_conexao()
+            cursor = conexao.cursor()
+            query = "DELETE FROM reservatorio WHERE idReservatorio = %s"
+            cursor.execute(query, (idReservatorio,))
+            conexao.commit()
+
+            # Verifica se a exclusão afetou alguma linha
+            return cursor.rowcount > 0
+
+        except Exception as e:
+            print(f"Erro ao deletar reservatório: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            conexao.close()
