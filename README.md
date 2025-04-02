@@ -23,7 +23,7 @@ venv\Scripts\activate
 O backend utiliza variáveis de ambiente para armazenar informações sensíveis ou específicas do ambiente. Crie um arquivo .env na pasta server com o seguinte conteúdo:
 
 # Variáveis de ambiente para o banco de dados
-DB_USER=\n
+DB_USER=<br/>
 DB_PASSWORD=
 DB_HOST=localhost
 DB_PORT=5432
