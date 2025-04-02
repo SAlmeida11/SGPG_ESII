@@ -24,14 +24,14 @@ O backend utiliza variáveis de ambiente para armazenar informações sensíveis
 
 # Variáveis de ambiente para o banco de dados
 DB_USER=<br/>
-DB_PASSWORD=
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=
+DB_PASSWORD=<br/>
+DB_HOST=localhost<br/>
+DB_PORT=5432<br/>
+DB_NAME=<br/>
 
 Observação: Certifique-se de preencher os valores pelas configurações adequadas ao seu ambiente.
 
 Para iniciar o servidor Flask, execute o seguinte comando:
 
-python api.py
+python api.py<br/>
 Por padrão, o servidor estará disponível em http://localhost:5000.
