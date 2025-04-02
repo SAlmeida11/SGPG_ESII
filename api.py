@@ -767,6 +767,110 @@ def listar_vendas():
         cursor.close()
         conexao.close()
 
+#ROTAS SERVIÇO
+#Cadastrar Serviço
+@app.route('/cadservico', methods=['POST'])
+def adicionar_servico():
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Obtendo os dados do corpo da requisição
+        dados = request.json
+
+        descricao = dados.get("descricao")
+        valor = dados.get("valor")
+        duracao_estimada = dados.get("duracaoEstimada")
+        disponivel = dados.get("disponivel", 1)  # Definição de valor padrão como disponível
+
+        # Validação dos dados recebidos
+        if not all([valor, duracao_estimada]):
+            return jsonify({"erro": "Dados incompletos"}), 400
+
+        # Iniciar transação
+        conexao.start_transaction()
+
+        # Inserir serviço
+        query_servico = """
+            INSERT INTO Servico (Descricao, Valor, DuracaoEstimada, Disponivel)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(query_servico, (descricao, valor, duracao_estimada, disponivel))
+
+        # Confirmar transação
+        conexao.commit()
+
+        return jsonify({"mensagem": "Serviço cadastrado com sucesso!", "id": cursor.lastrowid}), 201
+
+    except Error as err:
+        conexao.rollback()  # Reverte mudanças em caso de erro
+        print(f"Erro ao adicionar serviço: {err}")
+        return jsonify({"erro": "Erro ao cadastrar serviço"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+#Listar Serviços
+@app.route('/servicos', methods=['GET'])
+def listar_servicos():
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        query = "SELECT idServico, Descricao, Valor, DuracaoEstimada, Disponivel FROM Servico"
+        cursor.execute(query)
+        servicos = cursor.fetchall()
+
+        # Convertendo os dados para um formato JSON adequado
+        lista_servicos = [
+            {
+                "idServico": servico[0],
+                "descricao": servico[1],
+                "valor": servico[2],
+                "duracaoEstimada": str(servico[3]),
+                "disponivel": bool(servico[4])
+            }
+            for servico in servicos
+        ]
+
+        return jsonify(lista_servicos), 200
+    except Error as err:
+        print(f"Erro ao listar serviços: {err}")
+        return jsonify({"erro": "Erro ao listar serviços"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+#Remover serviço
+@app.route('/delete-servico/<int:id_servico>', methods=['DELETE'])
+def remover_servico(id_servico):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Verifica se o serviço existe
+        query_verificar = "SELECT idServico FROM Servico WHERE idServico = %s"
+        cursor.execute(query_verificar, (id_servico,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Serviço não encontrado"}), 404
+
+        # Remove o serviço
+        query_remover = "DELETE FROM Servico WHERE idServico = %s"
+        cursor.execute(query_remover, (id_servico,))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Serviço removido com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao remover o serviço: {err}")
+        return jsonify({"erro": "Erro ao remover o serviço"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+
 
 
 #Rota login
