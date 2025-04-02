@@ -366,6 +366,34 @@ def adicionar_cliente():
         if conexao:
             conexao.close()
 
+#rota para remover cliente
+@app.route('/delete-cliente/<cpf>', methods=['DELETE'])
+def remover_cliente(cpf):
+    conexao = Conexao.criar_conexao()
+    cursor = conexao.cursor()
+
+    try:
+        # Verifica se o cliente existe
+        query_verificar = "SELECT cpf FROM cliente WHERE cpf = %s"
+        cursor.execute(query_verificar, (cpf,))
+        if cursor.fetchone() is None:
+            return jsonify({"erro": "Cliente não encontrado"}), 404
+
+        # Remove o funcionário
+        query_remover = "DELETE FROM cliente WHERE cpf = %s"
+        cursor.execute(query_remover, (cpf,))
+        conexao.commit()
+
+        return jsonify({"mensagem": "Cliente removido com sucesso"}), 200
+
+    except Error as err:
+        print(f"Erro ao remover o cliente: {err}")
+        return jsonify({"erro": "Erro ao remover o cliente"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
 #Rota para cadastrar cliente
 @cliente_bp.route("/clientes", methods=["POST"])
 def cadastrar_cliente():
