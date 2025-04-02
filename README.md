@@ -2,12 +2,12 @@ Sistema de Gestão Posto de Gasolina (SGPG)
 Equipe
 Os desenvolvedores integrantes desse projeto são:
 
-Elias da Costa Rodrigues
-João Vitor Passos da Silva
-José Fernando Bispo
-Levi Ribeiro Santiago Mendonça
-Pericles Maikon de Jesus Costa
-Rafael Nascimento Andrade
+Elias da Costa Rodrigues<br/>
+João Vitor Passos da Silva<br/>
+José Fernando Bispo<br/>
+Levi Ribeiro Santiago Mendonça<br/>
+Pericles Maikon de Jesus Costa<br/>
+Rafael Nascimento Andrade<br/>
 Saula de Almeida
 
 Instruções para desenvolvedores
